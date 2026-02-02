@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Docker Cloud - Front</title>
+        <link rel="stylesheet" href="/style.css" />
+    </head>
+
+    <body>
+
+        <main class="card">
+            <div class="row">
+                <span class="label">GAME_URL</span>
+                <code id="gameUrl">...</code>
+            </div>
+
+            <div class="row">
+                <span class="label">Number</span>
+                <code id="gameNumber">-</code>
+            </div>
+
+            <pre id="gameStatus"
+                class="output">Game stream: not connected.</pre>
+        </main>
+
+        <main class="card">
+            <h1>Docker Cloud - Front</h1>
+            <p class="muted">
+                Minimal static frontend (no framework). Later it will call the
+                backend.
+            </p>
+
+            <div class="row">
+                <span class="label">API_URL</span>
+                <code id="apiUrl">...</code>
+            </div>
+
+            <button id="pingBtn">Ping backend</button>
+
+            <pre id="output" class="output">Ready.</pre>
+        </main>
+
+        <script src="/config.js"></script>
+        <script src="/app.js"></script>
+    </body>
+</html>

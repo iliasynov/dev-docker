@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build: ./front-server
+    # pas de ports exposes: nginx s'en occupe
+    depends_on:
+      - backend
+      - game
+
+  backend:
+    build: ./back-server
+
+  game:
+    build: ./os-server
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - frontend
+      - backend
+      - game
