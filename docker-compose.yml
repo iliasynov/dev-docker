@@ -1,22 +1,71 @@
+version: "3.9"
+
 services:
   frontend:
     build: ./front-server
-    # pas de ports exposes: nginx s'en occupe
     depends_on:
       - backend
       - game
+    cpus: ${FRONTEND_CPUS:-0.25}
+    mem_limit: ${FRONTEND_MEM:-128m}
+    env_file:
+      - .env
+    networks:
+      - private-net
 
   backend:
     build: ./back-server
+    cpus: ${BACKEND_CPUS:-0.75}
+    mem_limit: ${BACKEND_MEM:-512m}
+    env_file:
+      - .env
+    volumes:
+      - backend-data:${BACKEND_DATA_PATH}
+    networks:
+      - private-net
 
   game:
     build: ./os-server
+    cpus: ${GAME_CPUS:-0.50}
+    mem_limit: ${GAME_MEM:-256m}
+    env_file:
+      - .env
+    volumes:
+      - game-data:${GAME_STATE_PATH}
+    networks:
+      - private-net
 
   nginx:
     build: ./nginx
     ports:
-      - "8080:8080"
+      - "${NGINX_PORT}:8080"
     depends_on:
       - frontend
       - backend
       - game
+    cpus: ${NGINX_CPUS:-0.20}
+    mem_limit: ${NGINX_MEM:-128m}
+    env_file:
+      - .env
+    volumes:
+      - nginx-logs:/var/log/nginx
+    networks:
+      - public-net
+      - private-net
+
+# --------------------
+# NETWORK DEFINITIONS
+# --------------------
+networks:
+  public-net:
+    driver: bridge
+  private-net:
+    driver: bridge
+
+# --------------------
+# VOLUME DEFINITIONS
+# --------------------
+volumes:
+  backend-data:
+  game-data:
+  nginx-logs:

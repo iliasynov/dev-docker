@@ -8,4 +8,4 @@ window.__APP_CONFIG__ = {
 };
 EOF
 
-exec python3 -m http.server 80
+exec python3 -m http.server $FRONT_PORT

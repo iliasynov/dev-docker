@@ -1,8 +1,9 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
+import os
 
 HOST = "0.0.0.0"
-PORT = 6000
+PORT = int(os.getenv("GAME_PORT", 6000))
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"

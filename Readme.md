@@ -79,3 +79,25 @@ memory hog
 deploy resources
 limit
 reservation
+
+
+
+
+""" TODO THIS after noone :
+
+add the .env that contain the args
+add args
+add readme
+
+learn about the entrypont and the SIGTERMs
+
+desiner le shema de communication :
+
+expiquer tout
+
+"""
+entrypoint ["python", "app.py"]
+cmd ["--port", "5000"]
+
+
+stopsignal SIGINT
