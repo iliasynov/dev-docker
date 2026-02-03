@@ -1,8 +1,6 @@
-FROM ubuntu:24.04
+FROM alpine:3.23.3
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends nginx ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache nginx ca-certificates
 
 COPY nginx.conf /etc/nginx/nginx.conf
 

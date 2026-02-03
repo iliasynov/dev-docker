@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  cpu_hog_1:
+    image: busybox
+    container_name: cpu_hog_1
+    command: sh -c "while true; do :; done"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+
+  cpu_hog_2:
+    image: busybox
+    container_name: cpu_hog_2
+    command: sh -c "while true; do :; done"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+        reservations:
+          cpus: "0.20"
+          memory: 128M
+
+  memory_hog:
+    image: python:3.11-alpine
+    container_name: memory_hog
+    command: >
+      python -c "
+      a = [];
+      while True:
+          a.append('x' * 10_000_000)
+      "
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 150M
+
+  polite_service:
+    image: nginx:alpine
+    container_name: polite_service
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 64M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
+
+  totally_unnecessary_db:
+    image: postgres:15-alpine
+    container_name: useless_db
+    environment:
+      POSTGRES_PASSWORD: example
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.50"
+          memory: 256M

@@ -8,4 +8,4 @@ window.__APP_CONFIG__ = {
 };
 EOF
 
-exec python3 -m http.server 8080
+exec python3 -m http.server 80
