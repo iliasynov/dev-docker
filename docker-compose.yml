@@ -3,64 +3,117 @@ version: "3.9"
 services:
   frontend:
     build: ./front-server
+    # Construit l'image depuis le Dockerfile local du dossier front-server.
+
     depends_on:
       - backend
       - game
+    # Ordre de démarrage : backend + game sont lancés avant frontend.
+
     cpus: ${FRONTEND_CPUS:-0.25}
     mem_limit: ${FRONTEND_MEM:-128m}
+    # - Valeurs faibles car le frontend (serveur statique) est peu coûteux.
+    # ${VAR:-default} : lis la valeur depuis .env sinon utilise le défaut.
+
     env_file:
       - .env
+    # "Arguments attendus" : injection de configuration runtime depuis .env
+
+    stop_grace_period: 10s
+    # Gestion d'arrêt : Docker envoie SIGTERM puis attend ce délai avant SIGKILL.
+
+
     networks:
       - private-net
+    # Réseau interne : frontend accessible uniquement par les autres services du projet.
 
   backend:
     build: ./back-server
     cpus: ${BACKEND_CPUS:-0.75}
     mem_limit: ${BACKEND_MEM:-512m}
+    # Backend = logique applicative + traitement => plus de CPU/RAM alloués
+
     env_file:
       - .env
+    # Paramètres backend fournis par .env
+
     volumes:
       - backend-data:${BACKEND_DATA_PATH}
+    # Volume nommé = persistance des données.Valeur pilotable via .env (BACKEND_DATA_PATH)
+
+    stop_grace_period: 15s
+    # Donne un peu plus de temps au backend pour terminer proprement
+
     networks:
       - private-net
+    # Backend non exposé au host : on force l'accès via NGINX (reverse proxy).
+
 
   game:
     build: ./os-server
     cpus: ${GAME_CPUS:-0.50}
     mem_limit: ${GAME_MEM:-256m}
+    # Ressources intermédiaires : plus que frontend/nginx, moins que backend.
+
     env_file:
       - .env
+    # Paramètres game (GAME_PORT, GAME_MODE...) fournis par .env
+
     volumes:
       - game-data:${GAME_STATE_PATH}
+
+    stop_grace_period: 10s
+    # Arrêt propre : SIGTERM -> délai -> SIGKILL si besoin.
+
+
     networks:
       - private-net
+    # Service interne uniquement (pas exposé directement).
+
 
   nginx:
     build: ./nginx
     ports:
       - "${NGINX_PORT}:8080"
+    # Publication du service vers l'extérieur (host).
+
     depends_on:
       - frontend
       - backend
       - game
+    # Démarre après les services internes.
+
     cpus: ${NGINX_CPUS:-0.20}
     mem_limit: ${NGINX_MEM:-128m}
+    # NGINX est léger => limites faibles suffisantes.
+
     env_file:
       - .env
     volumes:
       - nginx-logs:/var/log/nginx
+    # Persistance des logs NGINX : utile pour debug (502, routage, erreurs).
+
+    stop_grace_period: 10s
+    # NGINX gère SIGTERM et ferme proprement si "daemon off" + PID1 correct.
+
+
     networks:
       - public-net
       - private-net
+    # Double réseau :
+    # - public-net : côté entrée (host -> nginx)
+    # - private-net : côté interne (nginx -> services)
+    # Pattern classique "reverse proxy" + isolation interne.
 
-# --------------------
-# NETWORK DEFINITIONS
-# --------------------
+    # --------------------
+    # NETWORK DEFINITIONS
+    # --------------------
 networks:
   public-net:
     driver: bridge
   private-net:
     driver: bridge
+    internal: true
 
 # --------------------
 # VOLUME DEFINITIONS

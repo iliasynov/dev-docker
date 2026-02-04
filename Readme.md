@@ -71,7 +71,6 @@ go to
 http://0.0.0.0:8080/
 
 
-
 volume permet d'utiliser le meme volumese sur differents machine ,
 
 cpu hog
@@ -85,19 +84,12 @@ reservation
 
 """ TODO THIS after noone :
 
-add the .env that contain the args
-add args
 add readme
-
-learn about the entrypont and the SIGTERMs
 
 desiner le shema de communication :
 
-expiquer tout
+expliquer tout
+
+shemas plus explications
 
 """
-entrypoint ["python", "app.py"]
-cmd ["--port", "5000"]
-
-
-stopsignal SIGINT
