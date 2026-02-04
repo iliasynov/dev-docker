@@ -1,95 +1,94 @@
-🔵 Pourquoi Debian (bookworm)
+# PROJET — Architecture Docker Compose
 
-Debian est utilisé pour les services backend (API Python, logique applicative).
+Ce projet est une application multi-conteneurs composée de 4 services :
+- frontend : serveur statique (HTML/CSS/JS)
+- backend : API Python (FastAPI/Uvicorn)
+- game : service Python (os_server)
+- nginx : reverse proxy (point d’entrée unique)
 
-Raisons principales :
-
-Stabilité élevée
-Debian est reconnu pour sa fiabilité et sa stabilité, ce qui est essentiel pour les services applicatifs long-running.
-
-Compatibilité logicielle maximale
-De nombreuses dépendances Python, bibliothèques natives et outils système sont plus facilement disponibles via apt.
-
-Environnement proche de la production réelle
-Debian est très utilisé sur les serveurs Linux professionnels, ce qui facilite le déploiement et la maintenance.
-
-Débogage plus simple
-Les outils standards (bash, curl, ip, netcat, etc.) sont facilement installables, ce qui accélère l’analyse des erreurs.
-
-📌 Choix justifié pour les services critiques et complexes.
-
-🟢 Pourquoi Alpine Linux
-
-Alpine est utilisé pour les services légers (NGINX, frontend statique, petits serveurs utilitaires).
-
-Raisons principales :
-
-Image très légère
-Alpine est basée sur musl et busybox, ce qui réduit fortement la taille des images Docker (quelques Mo).
-
-Démarrage rapide des conteneurs
-Idéal pour des services simples comme un reverse proxy ou un serveur de fichiers statiques.
-
-Surface d’attaque réduite
-Moins de paquets installés = moins de vulnérabilités potentielles.
-
-Parfait pour les rôles “infrastructure”
-NGINX ou un frontend statique n’ont pas besoin d’un OS complet.
-
-📌 Choix optimisé pour les composants simples et performants.
+![Architecture](/dev-docker.drawio.png)
 
 
+Objectif : architecture isolée, reproductible et proche d’un environnement réel.
 
 
+CONFIGURATION (ARGUMENTS ATTENDUS)
 
-Docker Cloud
+La configuration est externalisée via un fichier .env à la racine du projet, puis injectée dans les conteneurs avec env_file: .env et la substitution ${VAR:-default}.
+
+Exemple de fichier .env :
+
+## Ports
+NGINX_PORT=8080
+
+## Ressources
+FRONTEND_CPUS=0.25
+FRONTEND_MEM=128m
+BACKEND_CPUS=0.75
+BACKEND_MEM=512m
+GAME_CPUS=0.50
+GAME_MEM=256m
+NGINX_CPUS=0.20
+NGINX_MEM=128m
+
+## Volumes (chemins dans les conteneurs)
+BACKEND_DATA_PATH=/app/data
+GAME_STATE_PATH=/app/state
 
 
-frontend : react get informations from os server  and backend server
+LANCER LE PROJET
 
-docker build -t docker-cloud-front .
-docker run --rm -p 8080:8080 docker-cloud-front
-
-
-
-
-backend : receive and send informations to the front
-
-docker build -t docker-cloud-backend .
-docker run --rm -p 5001:5000 docker-cloud-backend
-
-
-os : only send informations to the front
-
-docker build -t docker-cloud-game .
-docker run --rm -p 6060:6000 docker-cloud-game
-
-
-docker compose
+Commande :
 docker compose up --build
-go to
-http://0.0.0.0:8080/
+
+Accès :
+- Application via NGINX : http://localhost:${NGINX_PORT}
+
+Arrêt :
+docker compose down
 
 
-volume permet d'utiliser le meme volumese sur differents machine ,
+LIMITATION DES RESSOURCES (CPU / RAM)
 
-cpu hog
-memory hog
-deploy resources
-limit
-reservation
+Chaque conteneur possède des limites (cpus, mem_limit) afin de :
+- éviter qu’un service monopolise la machine,
+- simuler un environnement réaliste,
+- améliorer la stabilité globale.
+
+Répartition logique :
+- nginx / frontend : services légers => limites faibles
+- backend / game : logique applicative => limites plus élevées
 
 
+GESTION DU SIGTERM (ARRÊT PROPRE)
+
+Lors d’un arrêt (docker stop / docker compose down), Docker envoie SIGTERM au processus principal (PID 1).
+Les images utilisent des commandes en exec-form (ENTRYPOINT ["..."], CMD ["..."]) pour que le vrai processus soit PID 1 :
+- meilleure propagation des signaux (SIGTERM)
+- logs et codes de sortie plus fiables
+
+Un délai de grâce (stop_grace_period) est défini dans docker-compose pour laisser le temps aux services de s’arrêter proprement avant un éventuel SIGKILL.
 
 
-""" TODO THIS after noone :
+RÉSEAUX DOCKER
 
-add readme
+Deux réseaux sont utilisés :
+- public-net : réseau “exposé” (seul nginx est accessible depuis le host via ports:)
+- private-net : réseau interne pour la communication entre services (nginx ↔ backend/frontend/game)
 
-desiner le shema de communication :
+Les services backend/frontend/game ne publient aucun port vers le host.
+Ils restent accessibles uniquement via private-net.
 
-expliquer tout
 
-shemas plus explications
+VOLUMES DOCKER
 
-"""
+Des volumes nommés sont utilisés pour persister les données :
+- backend-data -> données backend (${BACKEND_DATA_PATH})
+- game-data -> état du service game (${GAME_STATE_PATH})
+- nginx-logs -> logs nginx (/var/log/nginx)
+
+Lister les volumes :
+docker volume ls
+
+Inspecter un volume :
+docker volume inspect dev-docker_backend-data
